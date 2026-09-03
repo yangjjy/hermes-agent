@@ -16,6 +16,14 @@ from hermes_cli.runtime_client import (
 
 
 class _RuntimeHandler(BaseHTTPRequestHandler):
+    def _json(self, status, payload):
+        body = json.dumps(payload).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
         payloads = {
             "/v1/health/live": {"status": "alive"},
@@ -23,10 +31,7 @@ class _RuntimeHandler(BaseHTTPRequestHandler):
             "/v1/capabilities": {"capabilities": [{"capability_id": "asset.profile"}]},
         }
         payload = payloads.get(self.path, {"error": {"code": "NOT_FOUND"}})
-        self.send_response(200 if self.path in payloads else 404)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps(payload).encode())
+        self._json(200 if self.path in payloads else 404, payload)
 
     def do_POST(self):
         if self.headers["Authorization"] != "Bearer test-token":
@@ -44,10 +49,7 @@ class _RuntimeHandler(BaseHTTPRequestHandler):
             "code": "OK",
             "result": {"asset_id": body["payload"]["asset_id"]},
         }
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps(payload).encode())
+        self._json(200, payload)
 
     def assert_json_content_type(self):
         if self.headers["Content-Type"] != "application/json":
@@ -130,16 +132,13 @@ class RuntimeClientTests(unittest.TestCase):
     def test_completed_response_requires_execution_id(self):
         class MissingExecutionHandler(_RuntimeHandler):
             def do_POST(self):
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({
+                self._json(200, {
                     "request_id": "request-001",
                     "correlation_id": "corr-001",
                     "status": "COMPLETED",
                     "code": "OK",
                     "result": {},
-                }).encode())
+                })
 
         self.server.shutdown()
         self.thread.join(timeout=2)
