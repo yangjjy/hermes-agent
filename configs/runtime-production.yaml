@@ -1,0 +1,10 @@
+# Non-secret Hermes Runtime production entry configuration.
+runtime:
+  runtime_base_url: http://127.0.0.1:8643
+  credential_reference: env:AIOS_RUNTIME_BEARER_TOKEN
+  timeout_seconds: 10
+  max_transport_retries: 0
+  allowed_capabilities:
+    - asset.profile
+  runtime_release: AIOS_RUNTIME_BASELINE_V1_2
+  environment: production
