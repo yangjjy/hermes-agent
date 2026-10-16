@@ -97,3 +97,18 @@ def test_profile_home_alias_normalized_before_inventory(tmp_path,monkeypatch):
     monkeypatch.setenv('HERMES_HOME',str(tmp_path));job=stage(tmp_path)
     alias=tmp_path/'alias';alias.symlink_to(tmp_path,target_is_directory=True)
     assert control.invoke(job,alias,'prepare')['outcome']=='ALLOW'
+
+
+@pytest.mark.parametrize('malformed',['result_list','result_null','files_list'])
+def test_malformed_protocol_pauses_only_owned_and_preserves_other_jobs(tmp_path,monkeypatch,malformed):
+    monkeypatch.setenv('HERMES_HOME',str(tmp_path));job=stage(tmp_path)
+    handler=tmp_path/'scripts/control.py';manifest=tmp_path/'scripts/manifest.json'
+    if malformed.startswith('result_'):
+        handler.write_text('print('+repr('[]' if malformed=='result_list' else 'null')+')\n',encoding='utf-8')
+    files=['x'] if malformed=='files_list' else {'control.py':hashlib.sha256(handler.read_bytes()).hexdigest()}
+    manifest.write_text(json.dumps({'files':files}),encoding='utf-8')
+    job['dispatch_control'].update(handler_sha256=hashlib.sha256(handler.read_bytes()).hexdigest(),manifest_sha256=hashlib.sha256(manifest.read_bytes()).hexdigest())
+    jobs.save_jobs([job]);slot=job['next_run_at']
+    assert control.admit_due([job,{'id':'unrelated'}],tmp_path)==[{'id':'unrelated'}]
+    current=jobs.get_job(job['id'])
+    assert current['enabled'] is False and current['next_run_at']==slot and current['failure_streak']==0

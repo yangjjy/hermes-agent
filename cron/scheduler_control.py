@@ -38,7 +38,7 @@ def invoke(job, home, phase):
     manifest_path = _pinned(home, spec['manifest'], spec['manifest_sha256'])
     manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
     files = manifest['files']
-    if not files or files.get(spec['handler']) != spec['handler_sha256']:
+    if not isinstance(files, dict) or not files or files.get(spec['handler']) != spec['handler_sha256']:
         raise ValueError('BLOCKING_DRIFT')
     for relative, digest in files.items():
         _pinned(home, relative, digest)
@@ -84,7 +84,7 @@ def invoke(job, home, phase):
     if proc.returncode or len(output) > 4096:
         raise ValueError('CONTRACT_VIOLATION')
     result = json.loads(output)
-    if result.get('outcome') not in OUTCOMES or type(result.get('success')) is not bool:
+    if not isinstance(result, dict) or result.get('outcome') not in OUTCOMES or type(result.get('success')) is not bool:
         raise ValueError('CONTRACT_VIOLATION')
     return {key: result[key] for key in ('outcome', 'success')}
 
