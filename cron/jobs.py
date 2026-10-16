@@ -2427,7 +2427,11 @@ def _advance_after_run(job: dict[str, Any], now: str, *, ladder_rung: bool = Fal
             _complete_job_record(job)
             return
 
-    job["next_run_at"] = compute_next_run(job["schedule"], now)
+    if "dispatch_control" in job:
+        from cron.scheduler_control import next_run
+        job["next_run_at"] = next_run(job, now)
+    else:
+        job["next_run_at"] = compute_next_run(job["schedule"], now)
     if job["next_run_at"] is not None:
         if job.get("state") != "paused":
             job["state"] = "scheduled"
@@ -2684,6 +2688,13 @@ def clear_run_claim(job_id: str) -> bool:
     return _with_job(job_id, apply, False)
 
 
+def _next_for_job(job, now):
+    if 'dispatch_control' in job:
+        from cron.scheduler_control import next_run
+        return next_run(job, now)
+    return compute_next_run(job['schedule'], now)
+
+
 def advance_next_runs(job_ids) -> int:
     """Batch form of :func:`advance_next_run`: one load + at most one save for the whole due set;
     one-shot/unknown ids are skipped. Returns the count advanced. Persisted once at the end, so a
@@ -2702,7 +2713,11 @@ def advance_next_runs(job_ids) -> int:
                 or job.get("schedule", {}).get("kind") not in {"cron", "interval"}
             ):
                 continue
-            new_next = compute_next_run(job["schedule"], now)
+            if "dispatch_control" in job:
+                from cron.scheduler_control import next_run
+                new_next = next_run(job, now)
+            else:
+                new_next = compute_next_run(job["schedule"], now)
             if new_next and new_next != job.get("next_run_at"):
                 job["next_run_at"] = new_next
                 advanced += 1
@@ -2780,7 +2795,7 @@ def claim_job_for_fire(
             instant = None
         if instant and completed_occurrence(job, instant):
             if job.get("schedule", {}).get("kind") in {"cron", "interval"}:
-                nxt = compute_next_run(job["schedule"], now.isoformat())
+                nxt = _next_for_job(job, now.isoformat())
                 if nxt:
                     job["next_run_at"] = nxt
                     save_jobs(jobs)
@@ -2793,7 +2808,7 @@ def claim_job_for_fire(
         # Claimed: the occurrence is now owned by a run (its ledger row + fire claim carry it).
         job.pop("pending_slot", None)
         if job.get("schedule", {}).get("kind") in {"cron", "interval"}:
-            nxt = compute_next_run(job["schedule"], now.isoformat())
+            nxt = _next_for_job(job, now.isoformat())
             if nxt:
                 job["next_run_at"] = nxt
         save_jobs(jobs)
@@ -3266,7 +3281,8 @@ def _evaluate_due_job(job: dict[str, Any], scan: _DueScan, run_claim_ttl: float)
         if new_next:
             scan.persist(job["id"], next_run_at=new_next)
         return False
-    if kind == "cron" and not manual_run and _repair_timezone_shifted_cron(d):
+    controlled = "dispatch_control" in job
+    if kind == "cron" and not manual_run and not controlled and _repair_timezone_shifted_cron(d):
         return False
     d.next_run_dt = _rearm_stale_error_recurring(d)
     if _instant_after(d.next_run_dt, now):
@@ -3275,10 +3291,10 @@ def _evaluate_due_job(job: dict[str, Any], scan: _DueScan, run_claim_ttl: float)
     # Only the dispatch snapshot carries this field; never infer it from a later stamp.
     job["_scheduled_instant"] = None if manual_run else scheduled_instant(job.get("next_run_at"))
 
-    if not manual_run and kind == "cron" and _reanchor_stale_cron(d):
+    if not manual_run and not controlled and kind == "cron" and _reanchor_stale_cron(d):
         return False
     grace = _compute_grace_seconds(d.schedule)
-    if not manual_run and recurring and _fast_forward_missed_recurring(d, grace):
+    if not manual_run and not controlled and recurring and _fast_forward_missed_recurring(d, grace):
         return False
     if kind == "once":
         if _retire_expired_oneshot(d) or _oneshot_dispatch_limit_reached(job, scan):

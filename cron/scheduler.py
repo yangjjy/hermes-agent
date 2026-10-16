@@ -2778,6 +2778,9 @@ def run_one_job(
     claim (callers use the store CAS) but keeps it alive. True if processed (a job failure is
     recorded via ``mark_job_run``), False only if processing raised. ``cancel_event``: optional
     transport-level cancel (dashboard drain)."""
+    if 'dispatch_control' in job:
+        from cron.scheduler_control import refuse_direct
+        return refuse_direct(job)
     # Every gateway path (built-in scheduler, external providers, and direct
     # API fires) crosses this seam.  Ensure the detached worker has a durable
     # attempt to adopt before any launch can occur.
@@ -4260,6 +4263,11 @@ def _process_due_job(job: dict, adapters, loop, verbose: bool) -> bool:
     claimed_job = dict(claimed) if isinstance(claimed, dict) else dict(job)
     claimed_job["execution_id"] = job["execution_id"]
     claimed_job["_scheduled_instant"] = job.get("_scheduled_instant")
+    if '_control_deadline' in job:
+        claimed_job['_control_deadline'] = job['_control_deadline']
+    if 'dispatch_control' in job or 'dispatch_control' in claimed_job:
+        from cron.scheduler_control import run_admitted
+        return run_admitted(claimed_job, _get_hermes_home())
     return run_one_job(claimed_job, adapters=adapters, loop=loop, verbose=verbose)
 
 

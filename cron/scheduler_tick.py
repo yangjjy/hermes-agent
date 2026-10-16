@@ -140,6 +140,9 @@ def _tick_admitted(
         # Advance next_run_at for recurring jobs FIRST, under the lock, before any execution
         # (at-most-once). Re-advancing running jobs keeps the grace window alive; mark_job_run
         # overwrites it on completion. Composes with the claim-time advance in claim_job_for_fire.
+        from cron.scheduler_control import admit_due
+
+        due_jobs = admit_due(due_jobs, _sched._get_hermes_home())
         due_jobs = _advance_or_drop_recurring(_sched, due_jobs)
         if not due_jobs:
             _sched._sweep_mcp_orphans()
