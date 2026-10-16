@@ -146,7 +146,7 @@ def run_admitted(job, home):
         if slot:
             fields['next_run_at'] = slot
         update_job(job['id'], fields)
-        finish_execution(job['execution_id'], success=False, error='not executed:' + verdict['outcome'])
+        finish_execution(job['execution_id'], success=False, error='dispatch refused/interrupted; consult request audit:' + verdict['outcome'])
         return False
     success = verdict['success']
     mark_job_run(job['id'], success, None if success else 'CONTROLLED_OBSERVATION_FAILURE')

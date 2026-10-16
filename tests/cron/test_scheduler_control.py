@@ -112,3 +112,13 @@ def test_malformed_protocol_pauses_only_owned_and_preserves_other_jobs(tmp_path,
     assert control.admit_due([job,{'id':'unrelated'}],tmp_path)==[{'id':'unrelated'}]
     current=jobs.get_job(job['id'])
     assert current['enabled'] is False and current['next_run_at']==slot and current['failure_streak']==0
+
+
+def test_worker_interruption_does_not_claim_inflight_action_was_undone(tmp_path,monkeypatch):
+    from cron.executions import create_execution,get_execution
+    monkeypatch.setenv('HERMES_HOME',str(tmp_path));job=stage(tmp_path)
+    receipt=create_execution(job['id'],source='builtin');job['execution_id']=receipt['id']
+    with patch.object(control,'invoke',side_effect=ValueError('TIMEOUT')):
+        assert control.run_admitted(job,tmp_path) is False
+    assert 'not executed' not in get_execution(receipt['id'])['error']
+    assert jobs.get_job(job['id'])['enabled'] is False
