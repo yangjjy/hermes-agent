@@ -42,7 +42,7 @@ class ProductionRuntimeConfig:
 
     @classmethod
     def from_yaml(cls, path: Path) -> "ProductionRuntimeConfig":
-        payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        payload = yaml.safe_load(path.read_text(encoding="utf-8-sig")) or {}
         if not isinstance(payload, dict) or not isinstance(payload.get("runtime"), dict):
             raise ValueError("runtime production config must contain a runtime mapping")
         return cls.from_mapping(payload["runtime"])
