@@ -583,12 +583,12 @@ def _locate_real_git() -> Optional[Path]:
 
     The trampoline symptom is PATH-level: ``bin\\git.exe`` / ``cmd\\git.exe`` (both ~46KB shims) fail to
     re-exec git-core, while the real binary at ``mingw64\\libexec\\git-core\\git.exe`` (≈4.4MB) works when
-    invoked directly (#87876).
+    invoked directly (#87876). UCRT builds use ``ucrt64`` in place of ``mingw64``.
     """
     candidates = [
         Path(base) / "Git" / arch / "libexec" / "git-core" / "git.exe"
         for base in (r"C:\Program Files", r"C:\Program Files (x86)")
-        for arch in ("clangarm64", "mingw64", "mingw32")
+        for arch in ("clangarm64", "mingw64", "mingw32", "ucrt64")
     ] + _portable_git_candidates()
     return next((c for c in candidates if c.exists() and _probe_fork_bomb([str(c)]) is False), None)
 

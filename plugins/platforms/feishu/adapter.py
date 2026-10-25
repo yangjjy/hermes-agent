@@ -2517,7 +2517,9 @@ class FeishuAdapter(BasePlatformAdapter):
         chat_id = getattr(event.source, "chat_id", "") or "" if event.source else ""
         chat_lock = self._get_chat_lock(chat_id)
         async with chat_lock:
-            await self.handle_message(event)
+            from tools.feishu_lark import client_scope
+            with client_scope(getattr(self, "_client", None)):
+                await self.handle_message(event)
 
     # --- Processing status reactions ---
     def _reactions_enabled(self) -> bool:
@@ -4476,8 +4478,6 @@ def _is_connected(config) -> bool:
     """Feishu counts as connected once app_id is configured."""
     extra = getattr(config, "extra", {}) or {}
     return bool(extra.get("app_id"))
-
-
 
 def register(ctx) -> None:
     """Plugin entry point — called by the Hermes plugin system."""
