@@ -116,6 +116,11 @@ jobs:
           test-environment: 'true'
           prune-python-cache: true
 
+      - name: Prepare real Git-for-Windows live-test prerequisite
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/ci/prepare_windows_test_git.ps1
+
       - name: Run ${{ matrix.marker }} tests
         # scripts/run_tests.sh — the canonical runner, same as every other
         # lane: per-file subprocess isolation (run_tests_parallel.py). It

@@ -184,12 +184,14 @@ def test_result_finished_at_is_stamped_after_the_r6_release_wait(tmp_path: Path)
     holders = []
     ready = tmp_path / 'checkout-holder-ready'
     released = tmp_path / 'checkout-holder-released'
+    holder_script = tmp_path / 'hold_checkout_lock.py'
+    holder_script.write_text(_CHECKOUT_HOLDER, encoding='utf-8')
 
     def hold_checkout(home: Path, install: Path) -> None:
         holders.append(subprocess.Popen([
-            sys.executable, '-c', _CHECKOUT_HOLDER, str(install / '.hermes-update.lock'),
+            sys.executable, str(holder_script), str(install / '.hermes-update.lock'),
             str(ready), str(home / 'logs/desktop-update-handoff.log'), str(released),
-        ]))
+        ], cwd=tmp_path))
         deadline = time.monotonic() + 30
         while not ready.exists():
             assert holders[0].poll() is None and time.monotonic() < deadline, 'checkout holder never acquired its lock'
