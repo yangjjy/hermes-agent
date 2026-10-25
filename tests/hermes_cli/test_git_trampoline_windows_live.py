@@ -43,11 +43,12 @@ def _git_candidate_diagnostics() -> str:
     candidates = [
         Path(base) / 'Git' / arch / 'libexec' / 'git-core' / 'git.exe'
         for base in (r'C:\Program Files', r'C:\Program Files (x86)')
-        for arch in ('clangarm64', 'mingw64', 'mingw32')
+        for arch in ('clangarm64', 'mingw64', 'mingw32', 'ucrt64')
     ] + _portable_git_candidates()
     path_git = shutil.which('git')
     if path_git:
         native_root = Path(path_git).parent.parent
+        candidates += [Path(path_git), native_root / 'libexec/git-core/git.exe']
         candidates += [native_root / arch / directory / 'git.exe'
                        for arch in ('mingw64', 'clangarm64', 'mingw32')
                        for directory in ('bin', 'libexec/git-core')]
