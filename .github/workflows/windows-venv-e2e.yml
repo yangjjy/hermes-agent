@@ -38,8 +38,11 @@ concurrency:
 jobs:
   venv-holder-e2e:
     name: venv-holder live E2E (windows-latest)
-    runs-on: windows-latest-32-core
-    timeout-minutes: 25
+    runs-on: ${{ github.repository == 'NousResearch/hermes-agent' && 'windows-latest-32-core' || 'windows-latest' }}
+    timeout-minutes: ${{ github.repository == 'NousResearch/hermes-agent' && 25 || 45 }}
+    env:
+      HERMES_TEST_WORKERS: ${{ github.repository != 'NousResearch/hermes-agent' && '2' || '' }}
+      HERMES_TEST_FILE_TIMEOUT: ${{ github.repository == 'NousResearch/hermes-agent' && '300' || '600' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v7.0.1
@@ -67,7 +70,8 @@ jobs:
             tests/hermes_cli/test_venv_holder_windows_live.py \
             tests/hermes_cli/test_taskkill_identity_windows_live.py \
             tests/hermes_cli/test_git_trampoline_windows_live.py \
-            tests/pm/test_held_entry_windows_live.py
+            tests/pm/test_held_entry_windows_live.py \
+            tests/scripts/desktop_update/test_desktop_update_windows_commit_outcome.py
 
       - name: Run Telegram CLOSE-WAIT reconnect live E2E (#87057)
         shell: bash

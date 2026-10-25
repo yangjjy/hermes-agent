@@ -152,12 +152,28 @@ def test_nonzero_exit_after_the_commit_point_is_installed_with_a_followup(tmp_pa
         assert (result['ok'], result['exit_code']) == (False, 130), result
 
 
-_TIMED_CHECKOUT_HOLDER = """
+_CHECKOUT_HOLDER = """
 import msvcrt, os, sys, time
+from pathlib import Path
 fd = os.open(sys.argv[1], os.O_RDWR | os.O_CREAT | os.O_BINARY, 0o644)
 os.lseek(fd, 1 << 20, os.SEEK_SET)
 msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)   # hermes_cli/update_lock.py::_try_lock's byte
-time.sleep(float(sys.argv[2]))
+Path(sys.argv[2]).touch()
+log = Path(sys.argv[3])
+deadline = time.monotonic() + 150
+while True:
+    try:
+        waiting = log.exists() and 'keeping the update marker' in log.read_text(encoding='utf-8-sig')
+    except PermissionError:   # Add-Content briefly holds the hand-off log without read sharing.
+        waiting = False
+    if waiting:
+        break
+    if time.monotonic() >= deadline:
+        raise SystemExit('hand-off never reached the checkout release wait')
+    time.sleep(0.05)
+time.sleep(3)
+Path(sys.argv[4]).write_text(str(time.time()), encoding='ascii')
+os.close(fd)
 """
 
 
@@ -166,19 +182,29 @@ def test_result_finished_at_is_stamped_after_the_r6_release_wait(tmp_path: Path)
     # The relaunched Desktop drops a non-manual result whose finished_at is 30 minutes old; the
     # R6 wait lasts up to 2 h. The result must carry the time the hand-off actually finished.
     holders = []
+    ready = tmp_path / 'checkout-holder-ready'
+    released = tmp_path / 'checkout-holder-released'
 
-    def hold_checkout(_home: Path, install: Path) -> None:
-        holders.append((subprocess.Popen([sys.executable, '-c', _TIMED_CHECKOUT_HOLDER,
-                                          str(install / '.hermes-update.lock'), '25']), time.time() + 25))
+    def hold_checkout(home: Path, install: Path) -> None:
+        holders.append(subprocess.Popen([
+            sys.executable, '-c', _CHECKOUT_HOLDER, str(install / '.hermes-update.lock'),
+            str(ready), str(home / 'logs/desktop-update-handoff.log'), str(released),
+        ]))
+        deadline = time.monotonic() + 30
+        while not ready.exists():
+            assert holders[0].poll() is None and time.monotonic() < deadline, 'checkout holder never acquired its lock'
+            time.sleep(0.05)
     try:
         code, out, _, result, home = _handoff(tmp_path, '-NoGateway', prepare=hold_checkout)
     finally:
-        for proc, _ in holders:
-            proc.kill(); proc.wait()
+        for proc in holders:
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait()
     assert code == 0, out
     log = (home / 'logs/desktop-update-handoff.log').read_text(encoding='utf-8-sig')
     assert 'keeping the update marker' in log, log
-    assert result['ok'] is True and result['finished_at'] >= int(holders[0][1]) - 1, result
+    assert result['ok'] is True and result['finished_at'] >= int(float(released.read_text(encoding='ascii'))) - 1, result
 
 
 @pytest.mark.platforms('windows')
