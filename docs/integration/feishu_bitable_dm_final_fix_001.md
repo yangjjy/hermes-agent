@@ -1,3 +1,5 @@
+# Feishu Bitable DM minimal integration fix
+
 ## MCP native authentication follow-up — 2026-10-26
 
 The operator completed the original MCP native OAuth login. No CLI token or authentication store was copied.
@@ -18,7 +20,6 @@ Bot application access, Bot role membership, source CI and real Hermes DM accept
 
 ---
 
-# Feishu Bitable DM minimal integration fix
 
 Task: AIOS_HERMES_BITABLE_DM_FINAL_FIX_001
 Date: 2026-10-26 (Asia/Shanghai)
