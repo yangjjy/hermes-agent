@@ -8,7 +8,7 @@ A later inspection found the native access token expired. The installed native r
 
 The target Base returned two custom roles: 仅看视图的客户 and 普通用户. Both member-list responses succeeded with items=[], total=0 and has_more=false. My Digital Archiver was not found in these returned custom roles. This does not establish the application's default/system-role membership or all access paths. Both returned role definitions expose allow_add_record=true and allow_delete_record=true for the target table; do not assign the Bot to either based on its display name. No role/member/permission mutation occurred.
 
-The earlier missing collaborator scope is superseded by this successful readback. Bot data-read authorization and real DM acceptance remain unverified. Source PR #3 remains open and undeployed; its required remote CI is pending. The operator must confirm the exact application read-only role/table scope; no write grant is proposed.
+The earlier missing collaborator scope is superseded by this successful readback. A subsequent single Bot field-read probe, using app cli_a9e67013acb8dbcc and tenant_access_token, again returned 1254302 RolePermNotAllow. No source record body was read. Bot data-read authorization is still denied; real DM acceptance remains unverified. Source PR #3 remains open and undeployed; its required remote CI is pending. The operator must confirm the exact application read-only role/table scope; no write grant is proposed.
 
 ## MCP native authentication follow-up — 2026-10-26
 
