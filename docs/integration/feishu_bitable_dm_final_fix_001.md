@@ -29,7 +29,7 @@ Synthetic 1,463-record replay is not a live Bot acceptance result.
 
 ## Actual permissions and authentication remain separate
 
-The actual app identity is My Digital Archiver, app ID cli_a9e67013acb8dbcc. Prior same-resource probes returned five fields as user and 1254302 RolePermNotAllow as bot. The administrator confirmed read access; native Base metadata confirmed advanced permissions and returned two role entries. Bot membership and target-table permission mapping remain unverified because the execution approval service could not complete the read-only membership check. This patch does not grant or alter permissions.
+The actual app identity is My Digital Archiver, app ID cli_a9e67013acb8dbcc. Prior same-resource probes returned five fields as user and 1254302 RolePermNotAllow as bot. The administrator confirmed read access; native Base metadata confirmed advanced permissions and returned two role entries. After the execution approval service recovered, the read-only membership calls were executed but Feishu denied both with 99991679: the user authorization lacks one of bitable:app, bitable:app:readonly, or base:collaborator:read. Bot membership and target-table permission mapping remain unverified; missing-member results are UNKNOWN, not false. Only the smallest collaborator-read scope has been proposed for user consent. This patch does not grant or alter permissions.
 
 The separate native MCP user store had no active session, and native login did not complete. Existing CLI user authentication and its accepted complete capture are retained. The installed MCP refresh method passed six isolated checks in the prior receipt, but live refresh and long-term authentication are not certified. This Bitable tool does not substitute CLI/MCP user credentials for Bot identity.
 
@@ -46,3 +46,7 @@ The separate native MCP user store had no active session, and native login did n
 7. Verify MCP user refresh through its own native login and observed refresh lifecycle independently. A valid one-off token and synthetic tests are insufficient.
 
 No enterprise database, AIOS Runtime Core, Provider, Authority or Cron change. No new Architecture Gate. Rollback removes only this source extension through the normal deployment rollback process; preserve all earlier document reads and profile pause controls.
+
+## Source review state
+
+Hermes PR #3 contains this candidate. Repository Actions is currently disabled; no remote CI pass or merge is claimed. Temporary CI enablement and restoration has been requested separately. Existing live installation, credentials and profile configuration are unchanged.
