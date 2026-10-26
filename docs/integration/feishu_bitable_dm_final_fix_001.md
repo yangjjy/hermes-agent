@@ -1,3 +1,23 @@
+## MCP native authentication follow-up — 2026-10-26
+
+The operator completed the original MCP native OAuth login. No CLI token or authentication store was copied.
+
+Actual verification:
+- Native user login succeeded.
+- A bounded MCP useUAT=true field read succeeded.
+- The installed native LarkAuthHandlerLocal.refreshToken method completed one real refresh.
+- The access-token reference changed, the native local reference was updated, and refreshed metadata plus a refresh credential were persisted.
+- A separate process reloaded a valid native session.
+- A post-refresh read through the connected MCP server succeeded; field metadata matched the pre-refresh read.
+
+This establishes a real bounded refresh/persistence/readback lifecycle. It does not certify observed natural-expiry automatic triggering or indefinite unattended availability. Those remain NOT_OBSERVED / NOT_CERTIFIED, respectively.
+
+Current target field API response: **6 fields**, all returned with is_hidden=false, including **统一社会信用代码** in addition to the historical five-field baseline. No source field or record was changed by this task. Record this as a baseline difference; do not silently assert a five-field live result or substitute the old capture for current metadata.
+
+Bot application access, Bot role membership, source CI and real Hermes DM acceptance are unchanged and separate from this MCP user result. The pending base:collaborator:read and temporary GitHub Actions decisions have not been supplied by the operator's login-availability answer.
+
+---
+
 # Feishu Bitable DM minimal integration fix
 
 Task: AIOS_HERMES_BITABLE_DM_FINAL_FIX_001
