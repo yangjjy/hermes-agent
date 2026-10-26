@@ -1,5 +1,30 @@
 # Feishu Bitable DM minimal integration fix
 
+## Bounded CI corrections and desktop test timing — 2026-10-27
+
+The operator authorized a minimal test-only correction after the existing desktop Git integration test exceeded Vitest's default 5-second total budget on two separate CI runs. No isolation defect or production update defect is claimed.
+
+Before correction:
+- The exact unchanged test failed twice with Test timed out in 5000ms; one CI measurement was 6,576ms.
+- An instrumented isolated run passed in 2,063ms. Its two real Python CLI calls took 1,556ms and 291ms; real Git operations were retained.
+- The evidence supports an aggregate integration-test budget mismatch on shared runners. It does not establish the precise CI scheduling cause.
+
+Correction:
+- Only that single existing test receives a 15,000ms total budget. All assertions, real Git operations, platform conditions and cleanup remain unchanged.
+- The default timeout and all other test timeouts are unchanged.
+- No production update logic, Runtime, Provider, Base roles/members or credentials are modified.
+
+Local validation after correction:
+- Target update-ui file: 9/9 passed.
+- Entire tests-js suite: 34 files passed; 203 tests passed, 3 pre-existing platform skips.
+- Process observation: target run observed 18 test processes; full regression observed 262. No observed process or target temporary directory remained after completion.
+- Earlier local broad-run errors from missing root dependencies, Python command lookup and non-canonical temporary paths were environmental failures, not passing evidence. They were resolved only in the isolated test environment before the successful full regression.
+- Repository static checks: 11 passed; git diff --check passed.
+
+The two earlier PR-specific CI fixes are limited to installing the existing Feishu extra in the test environment and adding the newly declared feishu_bitable toolset to the current metrics schema enum. The existing exact-value test was reproduced failing before the enum correction and passing afterward. The five Python regression files passed 68 tests.
+
+Remote CI must actually pass on the final candidate before merge. This local evidence does not certify remote CI, deployment or real Bot DM acceptance. Temporary Actions enablement is authorized only for PR #3, with the recorded original disabled configuration restored after verification.
+
 ## Native authorization and advanced-role readback — 2026-10-26
 
 The operator explicitly authorized the minimum collaborator-read scope and completed the native browser flow. The old CLI Device Flow returned 20001; its cause is unresolved and it was not used as proof of permission denial. No CLI token was copied.
@@ -8,7 +33,7 @@ A later inspection found the native access token expired. The installed native r
 
 The target Base returned two custom roles: 仅看视图的客户 and 普通用户. Both member-list responses succeeded with items=[], total=0 and has_more=false. My Digital Archiver was not found in these returned custom roles. This does not establish the application's default/system-role membership or all access paths. Both returned role definitions expose allow_add_record=true and allow_delete_record=true for the target table; do not assign the Bot to either based on its display name. No role/member/permission mutation occurred.
 
-The earlier missing collaborator scope is superseded by this successful readback. A subsequent single Bot field-read probe, using app cli_a9e67013acb8dbcc and tenant_access_token, again returned 1254302 RolePermNotAllow. No source record body was read. Bot data-read authorization is still denied; real DM acceptance remains unverified. Source PR #3 remains open and undeployed; its required remote CI is pending. The operator must confirm the exact application read-only role/table scope; no write grant is proposed.
+The earlier missing collaborator scope is superseded by this successful readback. A subsequent single Bot field-read probe, using app cli_a9e67013acb8dbcc and tenant_access_token, again returned 1254302 RolePermNotAllow. No source record body was read. Bot data-read authorization is still denied; real DM acceptance remains unverified. Source changes are tracked through PR #3; consult its actual checks and merge state. Deployment and live DM acceptance remain separate. The operator must confirm the exact application read-only role/table scope; no write grant is proposed.
 
 ## MCP native authentication follow-up — 2026-10-26
 
@@ -26,7 +51,7 @@ This establishes a real bounded refresh/persistence/readback lifecycle. It does 
 
 Current target field API response: **6 fields**, all returned with is_hidden=false, including **统一社会信用代码** in addition to the historical five-field baseline. No source field or record was changed by this task. Record this as a baseline difference; do not silently assert a five-field live result or substitute the old capture for current metadata.
 
-Bot application access, Bot role membership, source CI and real Hermes DM acceptance are unchanged and separate from this MCP user result. The collaborator-read decision and subsequent successful role inspection are recorded in the latest addendum above. Temporary GitHub Actions authorization remains separate.
+Bot application access, Bot role membership, source CI and real Hermes DM acceptance are unchanged and separate from this MCP user result. The collaborator-read decision and subsequent successful role inspection are recorded in the latest addendum above. Temporary GitHub Actions enablement for PR #3 was subsequently authorized; original settings must be restored.
 
 ---
 
@@ -80,4 +105,4 @@ No enterprise database, AIOS Runtime Core, Provider, Authority or Cron change. N
 
 ## Source review state
 
-Hermes PR #3 contains this candidate. Repository Actions is currently disabled; no remote CI pass or merge is claimed. Temporary CI enablement and restoration has been requested separately. Existing live installation, credentials and profile configuration are unchanged.
+Hermes PR #3 contains this candidate. The original repository Actions state is disabled. Temporary PR #3 CI enablement and restoration are authorized; report actual CI and merge outcomes separately. Existing live installation, credentials and profile configuration are unchanged.
