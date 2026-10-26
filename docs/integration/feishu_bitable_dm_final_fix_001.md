@@ -1,5 +1,15 @@
 # Feishu Bitable DM minimal integration fix
 
+## Native authorization and advanced-role readback — 2026-10-26
+
+The operator explicitly authorized the minimum collaborator-read scope and completed the native browser flow. The old CLI Device Flow returned 20001; its cause is unresolved and it was not used as proof of permission denial. No CLI token was copied.
+
+A later inspection found the native access token expired. The installed native refresh method successfully refreshed that expired session before the read-only role/member calls. This proves recovery from an observed expired session in this bounded invocation; automatic refresh by the continuously running MCP process remains unobserved.
+
+The target Base returned two custom roles: 仅看视图的客户 and 普通用户. Both member-list responses succeeded with items=[], total=0 and has_more=false. My Digital Archiver was not found in these returned custom roles. This does not establish the application's default/system-role membership or all access paths. Both returned role definitions expose allow_add_record=true and allow_delete_record=true for the target table; do not assign the Bot to either based on its display name. No role/member/permission mutation occurred.
+
+The earlier missing collaborator scope is superseded by this successful readback. Bot data-read authorization and real DM acceptance remain unverified. Source PR #3 remains open and undeployed; its required remote CI is pending. The operator must confirm the exact application read-only role/table scope; no write grant is proposed.
+
 ## MCP native authentication follow-up — 2026-10-26
 
 The operator completed the original MCP native OAuth login. No CLI token or authentication store was copied.
@@ -16,7 +26,7 @@ This establishes a real bounded refresh/persistence/readback lifecycle. It does 
 
 Current target field API response: **6 fields**, all returned with is_hidden=false, including **统一社会信用代码** in addition to the historical five-field baseline. No source field or record was changed by this task. Record this as a baseline difference; do not silently assert a five-field live result or substitute the old capture for current metadata.
 
-Bot application access, Bot role membership, source CI and real Hermes DM acceptance are unchanged and separate from this MCP user result. The pending base:collaborator:read and temporary GitHub Actions decisions have not been supplied by the operator's login-availability answer.
+Bot application access, Bot role membership, source CI and real Hermes DM acceptance are unchanged and separate from this MCP user result. The collaborator-read decision and subsequent successful role inspection are recorded in the latest addendum above. Temporary GitHub Actions authorization remains separate.
 
 ---
 
@@ -62,7 +72,7 @@ The separate native MCP user store had no active session, and native login did n
 2. Deploy only the reviewed Bitable module and toolset extension after normal source checks and the required execution approval. This task does not report installation as completed.
 3. Use a fresh session/approved reload boundary. Do not mutate a conversation's cached historical tool schemas or clear user history to force the new surface.
 4. Independently establish the exact Bot advanced-role read permission. Submit any precise role adjustment for approval; do not grant write access or broaden sharing.
-5. Send the original Base URL in a real Hermes Feishu DM. Confirm actual calls to the two Bitable tools, application identity, five fields, terminal pagination and the observed source record count. Compare with the accepted source baseline; do not force the answer to 1,463 if the source changed.
+5. Send the original Base URL in a real Hermes Feishu DM. Confirm actual calls to the two Bitable tools, application identity, actual current field metadata, terminal pagination and the observed source record count. Compare with the accepted source baseline; do not force the answer to 1,463 if the source changed.
 6. Record all read failures, partial/unknown results and Docx/Wiki regression outcomes. Only a successful real DM permits PASS/CLOSED.
 7. Verify MCP user refresh through its own native login and observed refresh lifecycle independently. A valid one-off token and synthetic tests are insufficient.
 
